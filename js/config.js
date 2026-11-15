@@ -2,7 +2,7 @@
 window.CONFIG = {
   // radio lo-fi
   radio: [
-  { title: "Lofi Girl", video: "lTRiuFIWV54" },
+  { title: "Lofi Girl", video: "rFZHOHl-L8A" },
   // { title: "Outra rádio", channel: "UC..." },
 ],
 
