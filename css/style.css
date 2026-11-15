@@ -37,6 +37,11 @@ li.act{border-color:var(--ac);box-shadow:0 0 0 2px var(--ac)}li.dn .tx b{text-de
 .wg button.on{outline:3px solid var(--ac)}
 .row{display:grid;gap:4px;margin:12px 0}.row div{display:flex;justify-content:space-between;align-items:center;gap:6px}
 input[type=range]{accent-color:var(--ac);width:100%;padding:0}.row input[type=number]{width:70px}
-#radio{position:fixed;left:16px;bottom:16px;width:240px;padding:8px;border-radius:22px;z-index:4}#radio[hidden]{display:none}
-#radio iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:14px;display:block}
-#radio .ic{position:absolute;top:-10px;right:-10px;background:rgba(0,0,0,.55);border-radius:50%;padding:2px 8px;font-size:13px}
+
+#radio{position:fixed;left:0;top:0;width:380px;padding:10px;border-radius:28px;z-index:6}#radio[hidden]{display:none}
+.rh{display:flex;align-items:center;gap:8px;padding:2px 4px 10px;cursor:grab;touch-action:none;user-select:none}#radio.drag .rh{cursor:grabbing}#radio.drag iframe{pointer-events:none}
+.rh b{flex:1;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.live{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;background:rgba(255,70,90,.8);animation:blink 2.4s infinite}@keyframes blink{50%{opacity:.65}}
+.rs{display:flex;gap:3px}.rs button{padding:2px 9px;font-size:12px}.rs button.on{background:var(--ac);font-weight:800}
+.rv iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:18px;display:block;background:#000}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);max-width:min(560px,92vw);padding:12px 18px;z-index:9;font-size:14px;background:rgba(30,30,40,.6)}#toast[hidden]{display:none}

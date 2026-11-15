@@ -7,7 +7,7 @@ const GR=[{title:'Pêssego',bg:'linear-gradient(135deg,#ffd1dc,#ffb4a2 50%,#b583
 {title:'Musgo',bg:'linear-gradient(135deg,#cfe8d5,#7fb89a 55%,#2f5d50)',accent:'#9be3b5'},
 {title:'Noite',bg:'linear-gradient(135deg,#2b2d5b,#5b4b8a 55%,#e08fb0)',accent:'#c9a7ff'}];
 const WALLS=[...C.wallpapers.map(w=>({...w,bg:`url("assets/wallpapers/${encodeURIComponent(w.file)}")`})),...GR];
-const def=()=>({v:1,lists:[{id:'l1',name:'Geral'}],tasks:[],active:null,cur:'l1',cyc:0,log:{},amb:{},mv:.5,rv:.5,rs:0,
+const def=()=>({v:1,lists:[{id:'l1',name:'Geral'}],tasks:[],active:null,cur:'l1',cyc:0,log:{},amb:{},mv:.5,rv:.5,rs:0,rz:380,rp:null,
  set:{focus:25,short:5,long:15,goal:8,auto:false,wall:0},t:{m:'focus',end:0,left:1500,run:false}});
 function clean(d){const ids=new Set(d.lists.map(l=>l.id));if(!ids.size)d.lists=def().lists;
  d.tasks=d.tasks.filter(t=>ids.has(t.list));if(!d.tasks.some(t=>t.id===d.active))d.active=null;
@@ -36,26 +36,37 @@ function tasks(){const ts=S.tasks.filter(t=>t.list===S.cur&&!t.arch);
  $('#lists').innerHTML=S.lists.map(l=>`<button class="chip ${l.id===S.cur?'on':''}" data-a="list" data-id="${l.id}">${esc(l.name)}</button>`).join('')+'<button class="chip" data-a="newList">＋ lista</button>';
  $('#tl').innerHTML=ts.map(t=>`<li class="${t.done?'dn':''} ${S.active===t.id?'act':''}"><button class="ic" data-a="pick" data-id="${t.id}">${S.active===t.id?'🎯':'○'}</button><div class="tx"><b>${esc(t.name)}</b>${t.note?`<small>${esc(t.note)}</small>`:''}</div><span class="cnt">🍅 ${t.n}/${t.est}</span><button class="ic" data-a="check" data-id="${t.id}" title="Concluir">${t.done?'↩':'✓'}</button><button class="ic" data-a="edit" data-id="${t.id}">✎</button><button class="ic" data-a="del" data-id="${t.id}">🗑</button></li>`).join('')||'<li><span class="muted">Sem tasks nesta lista. Adicione a primeira acima ✨</span></li>'}
 
+document.body.insertAdjacentHTML('beforeend','<div id="toast" class="glass" hidden></div>');
+let tt;const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,10000)};
+const miss=f=>`Não achei ${f}. Confira o nome no config.js (maiúsculas contam) e se o arquivo foi enviado ao GitHub.`;
 // áudio
 const M=new Audio(),A={};let mi=0;const mn=C.music.length;
 const mset=i=>{mi=(i+mn)%mn;M.src='assets/music/'+encodeURIComponent(C.music[mi].file)};
-M.onended=()=>{mset(mi+1);M.play()};M.volume=S.mv;
-function amb(i,v){const a=C.ambient[i];if(!a)return;const o=A[i]||(A[i]=Object.assign(new Audio('assets/ambient/'+encodeURIComponent(a.file)),{loop:true}));o.volume=v;v>0?o.play().catch(()=>{}):o.pause()}
+M.onended=()=>{mset(mi+1);M.play()};M.volume=S.mv;M.onerror=()=>M.getAttribute('src')&&toast(miss(decodeURIComponent(M.getAttribute('src'))));
+function amb(i,v){const a=C.ambient[i];if(!a)return;const o=A[i]||(A[i]=Object.assign(new Audio('assets/ambient/'+encodeURIComponent(a.file)),{loop:true,onerror:()=>toast(miss('assets/ambient/'+a.file))}));o.volume=v;v>0?o.play().catch(()=>{}):o.pause()}
 
 // rádio ao vivo (YouTube) — mini-player fica visível, como pedem os termos do YouTube
 const R=C.radio||[{title:'Lofi Girl',channel:'UCSJ4gkVC6NrvII8umztf0Ow'}];let rOn=false;
-document.body.insertAdjacentHTML('beforeend','<div id="radio" class="glass" hidden><div></div><button class="ic" data-a="radioOff" title="Parar rádio">✕</button></div>');
+document.body.insertAdjacentHTML('beforeend','<div id="radio" class="glass" hidden><div class="rh"><span class="live">● AO VIVO</span><b id="rt"></b><span class="rs"><button data-a="rsize" data-id="260" title="Pequeno">P</button><button data-a="rsize" data-id="380" title="Médio">M</button><button data-a="rsize" data-id="520" title="Grande">G</button></span><button class="ic" data-a="radioOff" title="Parar rádio">✕</button></div><div class="rv"></div></div>');
+function rfit(){const b=$('#radio');b.style.width=Math.min(S.rz,innerWidth-24)+'px';const w=b.offsetWidth,h=b.offsetHeight,p=S.rp||{x:innerWidth-w-16,y:innerHeight-h-16};
+ p.x=Math.max(8,Math.min(innerWidth-w-8,p.x));p.y=Math.max(8,Math.min(innerHeight-h-8,p.y));b.style.left=p.x+'px';b.style.top=p.y+'px';
+ b.querySelectorAll('[data-a=rsize]').forEach(x=>x.classList.toggle('on',+x.dataset.id===S.rz))}
+{const h=$('#radio .rh');let dr=null;
+ h.onpointerdown=e=>{if(e.target.closest('button'))return;const r=$('#radio').getBoundingClientRect();dr={x:e.clientX-r.left,y:e.clientY-r.top};h.setPointerCapture(e.pointerId);$('#radio').classList.add('drag')};
+ h.onpointermove=e=>{if(dr){S.rp={x:e.clientX-dr.x,y:e.clientY-dr.y};rfit()}};
+ h.onpointerup=()=>{if(dr){dr=null;$('#radio').classList.remove('drag');save()}};
+ addEventListener('resize',()=>!$('#radio').hidden&&rfit())}
 const yt=(f,...a)=>{const i=$('#rf');i&&i.contentWindow.postMessage(JSON.stringify({event:'command',func:f,args:a}),'*')};
 function playRadio(i){const r=R[i];if(!r)return;S.rs=i;save();M.pause();
  const q='autoplay=1&playsinline=1&enablejsapi=1&rel=0'+(location.protocol.startsWith('http')?'&origin='+encodeURIComponent(location.origin):'');
  const u=r.channel?`https://www.youtube.com/embed/live_stream?channel=${r.channel}&${q}`:`https://www.youtube.com/embed/${r.video}?${q}`;
- $('#radio').hidden=false;$('#radio div').innerHTML=`<iframe id="rf" src="${u}" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin" title="${esc(r.title)}"></iframe>`;
- rOn=true;setTimeout(()=>yt('setVolume',S.rv*100),1500)}
-function radioOff(){$('#radio').hidden=true;$('#radio div').innerHTML='';rOn=false}
+ $('#radio').hidden=false;$('#radio .rv').innerHTML=`<iframe id="rf" src="${u}" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin" title="${esc(r.title)}"></iframe>`;
+ rOn=true;$('#rt').textContent=r.title;rfit();setTimeout(()=>yt('setVolume',S.rv*100),1500)}
+function radioOff(){$('#radio').hidden=true;$('#radio .rv').innerHTML='';rOn=false}
 M.onplay=()=>rOn&&radioOff();
 const radioHtml=()=>`<b>📻 Rádio ao vivo</b><div class="row"><div class="chips">${R.map((r,i)=>`<button class="chip ${rOn&&i===S.rs?'on':''}" data-a="radio" data-id="${i}">${esc(r.title)}</button>`).join('')}</div><input type="range" min="0" max="1" step=".01" value="${S.rv}" data-r="rv"></div>${navigator.onLine?'':'<p class="muted">Sem internet: use a playlist offline.</p>'}`;
 
-function wall(){const w=WALLS[S.set.wall]||WALLS[WALLS.length-1];$('#bg').style.background=w.bg;$('#bg').style.backgroundSize='cover';$('#bg').style.backgroundPosition='center';document.documentElement.style.setProperty('--ac',w.accent||'#ff8fab')}
+function wall(){const w=WALLS[S.set.wall]||WALLS[WALLS.length-1];if(w.file){const im=new Image();im.onerror=()=>toast(miss('assets/wallpapers/'+w.file));im.src='assets/wallpapers/'+encodeURIComponent(w.file)}$('#bg').style.background=w.bg;$('#bg').style.backgroundSize='cover';$('#bg').style.backgroundPosition='center';document.documentElement.style.setProperty('--ac',w.accent||'#ff8fab')}
 function panel(id){const p=$('#panel');if(!id||(!p.hidden&&p.dataset.id===id)){p.hidden=true;return}p.dataset.id=id;p.hidden=false;
  const x='<button class="ic" data-a="panel">✕</button>';let h='';
  if(id==='wall')h=`<h3>Fundos ${x}</h3><div class="wg">${WALLS.map((w,i)=>`<button data-a="setWall" data-id="${i}" class="${i===S.set.wall?'on':''}" style='background-image:${w.bg}'>${esc(w.title)}</button>`).join('')}</div>`;
@@ -83,6 +94,7 @@ const act={
  restore(d){const t=S.tasks.find(x=>x.id===d.id);delete t.arch;t.done=false;save();tasks();panel('arc');panel('arc')},
  panel(d){panel(d.id)},setWall(d){S.set.wall=+d.id;save();wall();panel('wall');panel('wall')},
  mplay(){if(!mn)return;if(!M.src)mset(0);M.paused?M.play():M.pause()},mnext(){if(mn){mset(mi+1);M.play();$('#mt').textContent=C.music[mi].title}},mprev(){if(mn){mset(mi-1);M.play();$('#mt').textContent=C.music[mi].title}},
+ rsize(d){S.rz=+d.id;save();rfit()},
  radio(d){+d.id===S.rs&&rOn?radioOff():playRadio(+d.id);panel('aud');panel('aud')},radioOff(){radioOff();if(!$('#panel').hidden&&$('#panel').dataset.id==='aud'){panel('aud');panel('aud')}},
  notif(){Notification.requestPermission()},
  exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='pomo-backup-'+td()+'.json';a.click()},
